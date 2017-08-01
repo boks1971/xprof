@@ -24,9 +24,9 @@ terminate(_Reason, _Req, _State) ->
 %% Handling different HTTP requests
 
 handle_req(<<"funs">>, Req, State) ->
-    {Query, _} = cowboy_req:qs_val(<<"query">>, Req, <<"">>),
+    Query = cowboy_req:match_qs([<<"query">>], Req, <<"">>),
 
-    Funs = xprof_vm_info:get_available_funs(Query),
+    Funs = xprof_vm_info:get_available_funs(maps:get(<<"query">>, Query)),
     Json = jsone:encode(Funs),
 
     lager:debug("Returning ~b functions matching phrase \"~s\"",
@@ -77,7 +77,7 @@ handle_req(<<"mon_get_all">>, Req, State) ->
 
 handle_req(<<"data">>, Req, State) ->
     MFA = get_mfa(Req),
-    {LastTS, _} = cowboy_req:qs_val(<<"last_ts">>, Req, <<"0">>),
+    LastTS = maps:get(<<"last_ts">>, cowboy_req:match_qs([<<"last_ts">>], Req, <<"0">>)),
 
     ResReq =
         case xprof_tracer:data(MFA, binary_to_integer(LastTS)) of
@@ -94,7 +94,7 @@ handle_req(<<"data">>, Req, State) ->
     {ok, ResReq, State};
 
 handle_req(<<"trace_set">>, Req, State) ->
-    {Spec, _} = cowboy_req:qs_val(<<"spec">>, Req),
+    Spec = maps:get(<<"spec">>, cowboy_req:match_qs([<<"spec">>], Req)),
 
     ResReq = case lists:member(Spec, [<<"all">>, <<"pause">>]) of
                  true ->
@@ -118,8 +118,8 @@ handle_req(<<"trace_status">>, Req, State) ->
 
 handle_req(<<"capture">>, Req, State) ->
     MFA = {M,F,A} = get_mfa(Req),
-    {ThresholdStr, _} = cowboy_req:qs_val(<<"threshold">>, Req),
-    {LimitStr, _} = cowboy_req:qs_val(<<"limit">>, Req),
+    ThresholdStr = maps:get(<<"threshold">>, cowboy_req:match_qs([<<"threshold">>], Req)),
+    LimitStr = maps:get(<<"limit">>, cowboy_req:match_qs([<<"limit">>], Req)),
     Threshold = binary_to_integer(ThresholdStr),
     Limit = binary_to_integer(LimitStr),
 
@@ -150,7 +150,7 @@ handle_req(<<"capture_stop">>, Req, State) ->
 
 handle_req(<<"capture_data">>, Req, State) ->
     MFA  = get_mfa(Req),
-    {OffsetStr, _} = cowboy_req:qs_val(<<"offset">>, Req),
+    OffsetStr = maps:get(<<"offset">>, cowboy_req:match_qs([<<"offset">>], Req)),
     Offset = binary_to_integer(OffsetStr),
 
     ResReq =
@@ -185,18 +185,18 @@ handle_req(<<"mode">>, Req, State) ->
 
 -spec get_mfa(cowboy:req()) -> xprof:mfa_id().
 get_mfa(Req) ->
-    {Params, _} = cowboy_req:qs_vals(Req),
-    {list_to_atom(binary_to_list(proplists:get_value(<<"mod">>, Params))),
-     list_to_atom(binary_to_list(proplists:get_value(<<"fun">>, Params))),
-     case proplists:get_value(<<"arity">>, Params) of
+    Params = cowboy_req:parse_qs(Req),
+    {list_to_atom(binary_to_list(maps:get(<<"mod">>, Params))),
+     list_to_atom(binary_to_list(maps:get(<<"fun">>, Params))),
+     case maps:get(<<"arity">>, Params) of
          <<"_">> -> '_';
          Arity -> binary_to_integer(Arity)
      end}.
 
 -spec get_query(cowboy:req()) -> string().
 get_query(Req) ->
-    {Params, _} = cowboy_req:qs_vals(Req),
-    binary_to_list(proplists:get_value(<<"query">>, Params)).
+    Params = cowboy_req:parse_qs(Req),
+    binary_to_list(maps:get(<<"query">>, Params)).
 
 args_res2proplist([Id, Pid, CallTime, Args, Res], ModeCb) ->
     [{id, Id},
