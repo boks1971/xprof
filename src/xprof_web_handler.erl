@@ -24,9 +24,9 @@ terminate(_Reason, _Req, _State) ->
 %% Handling different HTTP requests
 
 handle_req(<<"funs">>, Req, State) ->
-    Query = cowboy_req:match_qs([<<"query">>], Req, <<"">>),
+    Query = cowboy_req:match_qs([<<"query">>], Req),
 
-    Funs = xprof_vm_info:get_available_funs(maps:get(<<"query">>, Query)),
+    Funs = xprof_vm_info:get_available_funs(maps:get(<<"query">>, Query, <<"">>)),
     Json = jsone:encode(Funs),
 
     lager:debug("Returning ~b functions matching phrase \"~s\"",
@@ -77,7 +77,7 @@ handle_req(<<"mon_get_all">>, Req, State) ->
 
 handle_req(<<"data">>, Req, State) ->
     MFA = get_mfa(Req),
-    LastTS = maps:get(<<"last_ts">>, cowboy_req:match_qs([<<"last_ts">>], Req, <<"0">>)),
+    LastTS = maps:get(<<"last_ts">>, cowboy_req:match_qs([<<"last_ts">>], Req), <<"0">>),
 
     ResReq =
         case xprof_tracer:data(MFA, binary_to_integer(LastTS)) of
