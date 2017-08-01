@@ -24,9 +24,9 @@ terminate(_Reason, _Req, _State) ->
 %% Handling different HTTP requests
 
 handle_req(<<"funs">>, Req, State) ->
-    Query = cowboy_req:match_qs([<<"query">>], Req),
+    Query = cowboy_req:match_qs([{<<"query">>, [], <<"">>}], Req),
 
-    Funs = xprof_vm_info:get_available_funs(maps:get(<<"query">>, Query, <<"">>)),
+    Funs = xprof_vm_info:get_available_funs(maps:get(<<"query">>, Query)),
     Json = jsone:encode(Funs),
 
     lager:debug("Returning ~b functions matching phrase \"~s\"",
