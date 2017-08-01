@@ -186,8 +186,8 @@ handle_req(<<"mode">>, Req, State) ->
 -spec get_mfa(cowboy:req()) -> xprof:mfa_id().
 get_mfa(Req) ->
     Params = cowboy_req:parse_qs(Req),
-    {list_to_atom(binary_to_list(maps:get(<<"mod">>, Params))),
-     list_to_atom(binary_to_list(maps:get(<<"fun">>, Params))),
+    {list_to_atom(binary_to_list(proplists:get_value(<<"mod">>, Params))),
+     list_to_atom(binary_to_list(proplists:get_value(<<"fun">>, Params))),
      case maps:get(<<"arity">>, Params) of
          <<"_">> -> '_';
          Arity -> binary_to_integer(Arity)
@@ -196,7 +196,7 @@ get_mfa(Req) ->
 -spec get_query(cowboy:req()) -> string().
 get_query(Req) ->
     Params = cowboy_req:parse_qs(Req),
-    binary_to_list(maps:get(<<"query">>, Params)).
+    binary_to_list(proplists:get_value(<<"query">>, Params)).
 
 args_res2proplist([Id, Pid, CallTime, Args, Res], ModeCb) ->
     [{id, Id},
