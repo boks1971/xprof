@@ -32,18 +32,18 @@ handle_req(<<"funs">>, Req, State) ->
     lager:debug("Returning ~b functions matching phrase \"~s\"",
                 [length(Funs), Query]),
 
-    {ok, Req2} = cowboy_req:reply(200,
-                                  #{<<"content-type">> =>
-                                    <<"application/json">>},
-                                  Json,
-                                  Req),
+    Req2 = cowboy_req:reply(200,
+                            #{<<"content-type">> =>
+                              <<"application/json">>},
+                            Json,
+                            Req),
     {ok, Req2, State};
 
 handle_req(<<"mon_start">>, Req, State) ->
     Query = get_query(Req),
     lager:info("Starting monitoring via web on '~s'~n", [Query]),
 
-    {ok, ResReq} =
+    ResReq =
         case xprof_tracer:monitor(Query) of
             ok ->
                 cowboy_req:reply(204, ?HDR_NO_CONTENT, Req);
@@ -61,7 +61,7 @@ handle_req(<<"mon_stop">>, Req, State) ->
     lager:info("Stopping monitoring via web on ~w:~w/~w~n",[M,F,A]),
 
     xprof_tracer:demonitor(MFA),
-    {ok, ResReq} = cowboy_req:reply(204, ?HDR_NO_CONTENT, Req),
+    ResReq = cowboy_req:reply(204, ?HDR_NO_CONTENT, Req),
     {ok, ResReq, State};
 
 handle_req(<<"mon_get_all">>, Req, State) ->
@@ -69,17 +69,17 @@ handle_req(<<"mon_get_all">>, Req, State) ->
     FunsArr = [[Mod, Fun, Arity, Query]
                || {{Mod, Fun, Arity}, Query} <- Funs],
     Json = jsone:encode(FunsArr),
-    {ok, ResReq} = cowboy_req:reply(200,
-                                    #{<<"content-type">> =>
-                                      <<"application/json">>},
-                                    Json, Req),
+    ResReq = cowboy_req:reply(200,
+                              #{<<"content-type">> =>
+                                <<"application/json">>},
+                              Json, Req),
     {ok, ResReq, State};
 
 handle_req(<<"data">>, Req, State) ->
     MFA = get_mfa(Req),
     {LastTS, _} = cowboy_req:qs_val(<<"last_ts">>, Req, <<"0">>),
 
-    {ok, ResReq} =
+    ResReq =
         case xprof_tracer:data(MFA, binary_to_integer(LastTS)) of
             {error, not_found} ->
                 cowboy_req:reply(404, Req);
@@ -96,23 +96,23 @@ handle_req(<<"data">>, Req, State) ->
 handle_req(<<"trace_set">>, Req, State) ->
     {Spec, _} = cowboy_req:qs_val(<<"spec">>, Req),
 
-    {ok, ResReq} = case lists:member(Spec, [<<"all">>, <<"pause">>]) of
-                       true ->
-                           xprof_tracer:trace(list_to_atom(binary_to_list(Spec))),
-                           cowboy_req:reply(204, ?HDR_NO_CONTENT, Req);
-                       false ->
-                           lager:info("Wrong spec for tracing: ~p",[Spec]),
-                           cowboy_req:reply(400, Req)
-                   end,
+    ResReq = case lists:member(Spec, [<<"all">>, <<"pause">>]) of
+                 true ->
+                     xprof_tracer:trace(list_to_atom(binary_to_list(Spec))),
+                     cowboy_req:reply(204, ?HDR_NO_CONTENT, Req);
+                 false ->
+                     lager:info("Wrong spec for tracing: ~p",[Spec]),
+                     cowboy_req:reply(400, Req)
+             end,
     {ok, ResReq, State};
 
 handle_req(<<"trace_status">>, Req, State) ->
     {_, Status} = xprof_tracer:trace_status(),
     Json = jsone:encode({[{status, Status}]}),
-    {ok, ResReq} = cowboy_req:reply(200,
-                                    #{<<"content-type">> =>
-                                      <<"application/json">>},
-                                    Json, Req),
+    ResReq = cowboy_req:reply(200,
+                              #{<<"content-type">> =>
+                                <<"application/json">>},
+                              Json, Req),
 
     {ok, ResReq, State};
 
@@ -129,9 +129,9 @@ handle_req(<<"capture">>, Req, State) ->
     {ok, CaptureId} = xprof_tracer_handler:capture(MFA, Threshold, Limit),
     Json = jsone:encode({[{capture_id, CaptureId}]}),
 
-    {ok, ResReq} = cowboy_req:reply(200,
-                                    #{<<"content-type">> =>
-                                      <<"application/json">>}, Json, Req),
+    ResReq = cowboy_req:reply(200,
+                              #{<<"content-type">> =>
+                                <<"application/json">>}, Json, Req),
     {ok, ResReq, State};
 
 handle_req(<<"capture_stop">>, Req, State) ->
@@ -139,7 +139,7 @@ handle_req(<<"capture_stop">>, Req, State) ->
 
     lager:info("Stopping slow calls capturing for ~p", [MFA]),
 
-    {ok, ResReq} =
+    ResReq =
         case xprof_tracer_handler:capture_stop(MFA) of
             ok ->
                 cowboy_req:reply(204, ?HDR_NO_CONTENT, Req);
@@ -153,7 +153,7 @@ handle_req(<<"capture_data">>, Req, State) ->
     {OffsetStr, _} = cowboy_req:qs_val(<<"offset">>, Req),
     Offset = binary_to_integer(OffsetStr),
 
-    {ok, ResReq} =
+    ResReq =
         case xprof_tracer_handler:get_captured_data(MFA, Offset) of
             {error, not_found} ->
                 cowboy_req:reply(404, Req);
@@ -175,10 +175,10 @@ handle_req(<<"capture_data">>, Req, State) ->
 handle_req(<<"mode">>, Req, State) ->
     Mode = xprof_lib:get_mode(),
     Json = jsone:encode({[{mode, Mode}]}),
-    {ok, ResReq} = cowboy_req:reply(200,
-                                    #{<<"content-type">> =>
-                                      <<"application/json">>},
-                                    Json, Req),
+    ResReq = cowboy_req:reply(200,
+                              #{<<"content-type">> =>
+                                <<"application/json">>},
+                              Json, Req),
     {ok, ResReq, State}.
 
 %% Helpers
