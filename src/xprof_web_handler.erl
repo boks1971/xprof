@@ -1,8 +1,8 @@
 -module(xprof_web_handler).
 
--export([init/3,handle/2,terminate/3]).
+-export([init/2,terminate/3]).
 
--behavior(cowboy_http_handler).
+-behavior(cowboy_handler).
 
 %% In case an XHR receives no content with no content-type Firefox will emit
 %% the following error: "XML Parsing Error: no root element found..."
@@ -12,10 +12,7 @@
 
 %% Cowboy callbacks
 
-init(_Type, Req, _Opts) ->
-    {ok, Req, no_state}.
-
-handle(Req, State) ->
+init(Req, State) ->
     {What,_} = cowboy_req:binding(what, Req),
     handle_req(What, Req, State).
 
