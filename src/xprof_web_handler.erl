@@ -13,7 +13,7 @@
 %% Cowboy callbacks
 
 init(Req, State) ->
-    {What,_} = cowboy_req:binding(what, Req),
+    What = cowboy_req:binding(what, Req),
     handle_req(What, Req, State).
 
 terminate(_Reason, _Req, _State) ->
