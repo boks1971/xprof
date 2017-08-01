@@ -24,9 +24,10 @@ terminate(_Reason, _Req, _State) ->
 %% Handling different HTTP requests
 
 handle_req(<<"funs">>, Req, State) ->
-    Query = cowboy_req:match_qs([{<<"query">>, [], <<"">>}], Req),
+    Params = cowboy_req:parse_qs(Req),
+    Query = proplists:get_value(<<"query">>, Params),
 
-    Funs = xprof_vm_info:get_available_funs(maps:get(<<"query">>, Query)),
+    Funs = xprof_vm_info:get_available_funs(Query),
     Json = jsone:encode(Funs),
 
     lager:debug("Returning ~b functions matching phrase \"~s\"",
@@ -77,7 +78,8 @@ handle_req(<<"mon_get_all">>, Req, State) ->
 
 handle_req(<<"data">>, Req, State) ->
     MFA = get_mfa(Req),
-    LastTS = maps:get(<<"last_ts">>, cowboy_req:match_qs([<<"last_ts">>], Req), <<"0">>),
+    Params = cowboy_req:parse_qs(Req),
+    LastTS = proplists:get_value(<<"last_ts">>, Params, <<"0">>),
 
     ResReq =
         case xprof_tracer:data(MFA, binary_to_integer(LastTS)) of
@@ -94,7 +96,8 @@ handle_req(<<"data">>, Req, State) ->
     {ok, ResReq, State};
 
 handle_req(<<"trace_set">>, Req, State) ->
-    Spec = maps:get(<<"spec">>, cowboy_req:match_qs([<<"spec">>], Req)),
+    Params = cowboy_req:parse_qs(Req),
+    Spec = proplists:get_value(<<"spec">>, Params),
 
     ResReq = case lists:member(Spec, [<<"all">>, <<"pause">>]) of
                  true ->
@@ -118,8 +121,9 @@ handle_req(<<"trace_status">>, Req, State) ->
 
 handle_req(<<"capture">>, Req, State) ->
     MFA = {M,F,A} = get_mfa(Req),
-    ThresholdStr = maps:get(<<"threshold">>, cowboy_req:match_qs([<<"threshold">>], Req)),
-    LimitStr = maps:get(<<"limit">>, cowboy_req:match_qs([<<"limit">>], Req)),
+    Params = cowboy_req:parse_qs(Req),
+    ThresholdStr = proplists:get_value(<<"threshold">>, Params),
+    LimitStr = proplists:get_value(<<"limit">>, Params),
     Threshold = binary_to_integer(ThresholdStr),
     Limit = binary_to_integer(LimitStr),
 
@@ -150,7 +154,8 @@ handle_req(<<"capture_stop">>, Req, State) ->
 
 handle_req(<<"capture_data">>, Req, State) ->
     MFA  = get_mfa(Req),
-    OffsetStr = maps:get(<<"offset">>, cowboy_req:match_qs([<<"offset">>], Req)),
+    Params = cowboy_req:parse_qs(Req),
+    OffsetStr = proplists:get_value(<<"offset">>, Params),
     Offset = binary_to_integer(OffsetStr),
 
     ResReq =
