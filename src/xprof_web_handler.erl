@@ -193,7 +193,7 @@ get_mfa(Req) ->
     Params = cowboy_req:parse_qs(Req),
     {list_to_atom(binary_to_list(proplists:get_value(<<"mod">>, Params))),
      list_to_atom(binary_to_list(proplists:get_value(<<"fun">>, Params))),
-     case maps:get(<<"arity">>, Params) of
+     case proplists:get_value(<<"arity">>, Params) of
          <<"_">> -> '_';
          Arity -> binary_to_integer(Arity)
      end}.
